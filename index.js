@@ -1,7 +1,5 @@
 const exec = require('child_process').exec;
 const express = require('express');
-const multer = require('multer');
-const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path'); // Import path module
@@ -28,7 +26,7 @@ app.post('/3d', (req, res) => {
   const fileName = 'file_' + new Date().toISOString() + '.' + ext;
   const jobId = new Date().toISOString(); // Unique job ID
 
-  jobs[jobId] = { status: 'processing', fileName: fileName }; // Initialize job status
+  jobs[jobId] = { status: 'processing', fileName: fileName, resultFileName: null }; // Initialize job status
 
   fs.writeFile(fileName, b, 'binary', function (err) {
     if (err) {
@@ -40,6 +38,7 @@ app.post('/3d', (req, res) => {
 
     console.log('The file was saved!');
     const outFile = 'out_' + new Date().toISOString() + '.3mf';
+    jobs[jobId].resultFileName = outFile;
 
     // Set executable permissions
     execSync('chmod +x ./prusaslicer/prusa-slicer');
@@ -57,11 +56,7 @@ app.post('/3d', (req, res) => {
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
 
-      // Use path.resolve to create an absolute path
-      const absoluteOutFilePath = path.resolve(__dirname, outFile);
-
       jobs[jobId].status = 'completed';
-
       res.json({ jobId: jobId, message: 'Processing started', status: jobs[jobId].status });
     });
   });
@@ -76,9 +71,21 @@ app.get('/status', (req, res) => {
   }
 
   const job = jobs[jobId];
+  res.json({ jobId: jobId, status: job.status });
+});
 
-  if (job.status === 'completed') {
-    const absoluteOutFilePath = path.resolve(__dirname, job.fileName);
+// Result endpoint
+app.get('/result', (req, res) => {
+  const jobId = req.query.jobId;
+
+  if (!jobId || !jobs[jobId]) {
+    return res.status(404).send('Job not found');
+  }
+
+  const job = jobs[jobId];
+
+  if (job.status === 'completed' && job.resultFileName) {
+    const absoluteOutFilePath = path.resolve(__dirname, job.resultFileName);
     res.sendFile(absoluteOutFilePath, (err) => {
       if (err) {
         console.error('File send error:', err);
@@ -86,7 +93,7 @@ app.get('/status', (req, res) => {
       }
     });
   } else {
-    res.json({ jobId: jobId, status: job.status });
+    res.status(404).send('Result not available yet');
   }
 });
 

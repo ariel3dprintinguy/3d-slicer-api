@@ -14,6 +14,48 @@ app.use(
 //app.use(express.urlencoded({ extended: true }));
 
 
+function runCommand(command) {
+  try {
+    execSync(command, { stdio: 'inherit' });
+  } catch (error) {
+    console.error(`Failed to execute command: ${command}`);
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+function setupEnvironment() {
+  console.log('Setting up environment...');
+
+  // Install system dependencies
+  const aptDependencies = [
+    'libcairo2',
+    'libglu1-mesa',
+    'gstreamer1.0-libav',
+    'gstreamer1.0-plugins-base',
+    'libgtk-3-0',
+    'libsoup2.4-1',
+    'libxkbcommon0',
+    'libgl1-mesa-dri',
+    'libopenvdb-dev',
+    'fonts-noto',
+    'wayland-protocols',
+    'libwebkit2gtk-4.0-37',
+    'libfuse2'
+  ];
+
+  runCommand(`sudo apt-get update && sudo apt-get install -y ${aptDependencies.join(' ')}`);
+
+  // Download and install HarmonyOS Sans font
+  console.log('Installing HarmonyOS Sans font...');
+  runCommand('wget https://example.com/path/to/HarmonyOSSans.ttf -O HarmonyOSSans.ttf');
+  runCommand('mkdir -p ~/.fonts && mv HarmonyOSSans.ttf ~/.fonts/ && fc-cache -f -v');
+
+  console.log('Environment setup complete.');
+}
+
+setupEnvironment();
+
 app.get("/", (req, res) => {
     res.send("hello world")
 })

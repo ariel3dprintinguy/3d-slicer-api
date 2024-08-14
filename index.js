@@ -15,6 +15,7 @@ app.use(
 
 
 function runCommand(command) {
+  const { execSync } = require('child_process');
   try {
     execSync(command, { stdio: 'inherit' });
   } catch (error) {

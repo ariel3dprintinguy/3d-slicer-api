@@ -1,41 +1,41 @@
 var exec = require('child_process').exec;
-let express = require('express')
-const multer = require("multer");
-const fileUpload = require("express-fileupload")
-var bodyParser = require('body-parser')
-const fs = require("fs")
-const app = express()
-//app.use(fileUpload());
+const express = require('express');
+const multer = require('multer');
+const fileUpload = require('express-fileupload');
+var bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path'); // Import path module
+const app = express();
+
 app.use(
-    bodyParser.raw({limit: "50mb", type: ['model/*']})
+    bodyParser.raw({ limit: '50mb', type: ['model/*'] })
 );
-//const upload = multer({ dest: "uploads/" });
-//app.use(express.json());
-//app.use(express.urlencoded({ extended: true }));
 
+app.get('/', (req, res) => {
+    res.send('hello world');
+});
 
-app.get("/", (req, res) => {
-    res.send("hello world")
-})
+app.post('/3d', (req, res) => {
+    const type = req.get('Content-Type');
+    const ext = type.split('/')[1];
+    console.log('ext', ext);
 
-app.post("/3d", (req, res) => {
-    const type = req.get('Content-Type')
-    const ext = type.split("/")[1]
-    console.log("ext", ext);
-//	console.log(req)
-    const b = req.body
-    const fileName = "file_" + new Date().toISOString() + "." + ext
-    fs.writeFile(fileName, b, "binary", function (err) {
+    const b = req.body;
+    const fileName = 'file_' + new Date().toISOString() + '.' + ext;
+
+    fs.writeFile(fileName, b, 'binary', function (err) {
         if (err) {
-            console.log(err)
+            console.log(err);
         } else {
-            console.log("The file was saved!");
+            console.log('The file was saved!');
             const { execSync } = require('child_process');
 
             // Set executable permissions
             execSync('chmod +x ./prusaslicer/prusa-slicer');
             execSync('chmod +x ./prusaslicer/bin/bambu-studio');
-            const outFile = "out_" + new Date().toISOString() + ".3mf"
+
+            const outFile = 'out_' + new Date().toISOString() + '.3mf';
+
             exec(`./prusaslicer/prusa-slicer --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
                 if (err) {
                     console.log(err);
@@ -45,18 +45,22 @@ app.post("/3d", (req, res) => {
                 // the *entire* stdout and stderr (buffered)
                 console.log(`stdout: ${stdout}`);
                 console.log(`stderr: ${stderr}`);
-                // Completed:
-                res.sendFile(outFile)
 
+                // Use path.resolve to create an absolute path
+                const absoluteOutFilePath = path.resolve(__dirname, outFile);
+
+                // Completed:
+                res.sendFile(absoluteOutFilePath, (err) => {
+                    if (err) {
+                        console.log(err);
+                        res.status(err.status).end();
+                    }
+                });
             });
         }
     });
-})
-
+});
 
 app.listen(28508, () => {
-    console.log("listening on 28508")
-})
-///
-//console.log("h")
-
+    console.log('listening on 28508');
+});

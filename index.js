@@ -39,7 +39,7 @@ app.post('/3d', (req, res) => {
 
             const outFile = 'out_' + new Date().toISOString() + '.3mf';
 
-            exec(./prusaslicer/prusa-slicer --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}, (err, stdout, stderr) => {
+            exec(`./prusaslicer/prusa-slicer --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
                 if (err) {
                     console.log(err);
                     return;

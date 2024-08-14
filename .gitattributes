@@ -1,0 +1,1 @@
+prusaslicer/bin/bambu-studio filter=lfs diff=lfs merge=lfs -text

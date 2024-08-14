@@ -39,6 +39,7 @@ app.post('/3d', (req, res) => {
     console.log('The file was saved!');
     const outFile = 'out_' + new Date().toISOString() + '.3mf';
     jobs[jobId].resultFileName = outFile;
+    const { execSync } = require('child_process');
 
     // Set executable permissions
     execSync('chmod +x ./prusaslicer/prusa-slicer');

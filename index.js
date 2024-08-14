@@ -1,68 +1,76 @@
-
-var exec = require('child_process').exec;
 const express = require('express');
-const multer = require('multer');
+const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
-var bodyParser = require('body-parser');
 const fs = require('fs');
-const path = require('path'); // Import path module
-const cors = require('cors'); // Import the cors middleware
+const path = require('path');
+const cors = require('cors');
+const { exec, execSync } = require('child_process');
+
 const app = express();
 
 // Enable CORS for all routes
 app.use(cors());
 
-app.use(
-    bodyParser.raw({ limit: '50mb', type: ['model/*'] })
-);
+// Use express-fileupload middleware
+app.use(fileUpload({
+    createParentPath: true,
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+}));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
     res.send('hello world');
 });
 
 app.post('/3d', (req, res) => {
-    const type = req.get('Content-Type');
-    const ext = type.split('/')[1];
-    console.log('ext', ext);
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).send('No files were uploaded.');
+    }
 
-    const b = req.body;
-    const fileName = 'file_' + new Date().toISOString() + '.' + ext;
+    let uploadedFile = req.files.file; // 'file' should match the key used in the iOS Shortcut
+    let ext = path.extname(uploadedFile.name);
+    let fileName = 'file_' + new Date().toISOString().replace(/:/g, '-') + ext;
 
-    fs.writeFile(fileName, b, 'binary', function (err) {
+    uploadedFile.mv(fileName, function(err) {
         if (err) {
             console.log(err);
-        } else {
-            console.log('The file was saved!');
-            const { execSync } = require('child_process');
+            return res.status(500).send(err);
+        }
 
-            // Set executable permissions
-            execSync('chmod +x ./prusaslicer/prusa-slicer');
-            execSync('chmod +x ./prusaslicer/bin/bambu-studio');
+        console.log('The file was saved!');
 
-            const outFile = 'out_' + new Date().toISOString() + '.3mf';
+        // Set executable permissions
+        execSync('chmod +x ./prusaslicer/prusa-slicer');
+        execSync('chmod +x ./prusaslicer/bin/bambu-studio');
 
-            exec(`./prusaslicer/prusa-slicer --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
+        const outFile = 'out_' + new Date().toISOString().replace(/:/g, '-') + '.3mf';
+        const machinePath = path.join(__dirname, 'profiles', 'machine.json');
+        const processPath = path.join(__dirname, 'profiles', 'process.json');
+        const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
+
+        exec(`./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send('Error processing file');
+            }
+
+            console.log(`stdout: ${stdout}`);
+            console.log(`stderr: ${stderr}`);
+
+            const absoluteOutFilePath = path.resolve(__dirname, outFile);
+
+            res.sendFile(absoluteOutFilePath, (err) => {
                 if (err) {
                     console.log(err);
-                    return;
+                    res.status(err.status).end();
                 }
-
-                // the *entire* stdout and stderr (buffered)
-                console.log(`stdout: ${stdout}`);
-                console.log(`stderr: ${stderr}`);
-
-                // Use path.resolve to create an absolute path
-                const absoluteOutFilePath = path.resolve(__dirname, outFile);
-
-                // Completed:
-                res.sendFile(absoluteOutFilePath, (err) => {
-                    if (err) {
-                        console.log(err);
-                        res.status(err.status).end();
-                    }
-                });
+                // Clean up temporary files
+                fs.unlinkSync(fileName);
+                fs.unlinkSync(absoluteOutFilePath);
             });
-        }
+        });
     });
 });
 

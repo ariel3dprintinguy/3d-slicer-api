@@ -34,7 +34,7 @@ app.post("/3d", (req, res) => {
 
             // Set executable permissions
             execSync('chmod +x ./prusaslicer/prusa-slicer');
-
+            execSync('chmod +x /opt/render/project/src/prusaslicer/bin/bambu-studio');
             const outFile = "out_" + new Date().toISOString() + ".3mf"
             exec(`./prusaslicer/prusa-slicer --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
                 if (err) {

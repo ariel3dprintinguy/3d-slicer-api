@@ -3,7 +3,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path'); // Import path module
+const cors = require('cors'); // Import the cors middleware
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors());
 
 // In-memory job storage
 const jobs = {}; 
@@ -23,7 +27,7 @@ app.post('/3d', (req, res) => {
   console.log('File extension:', ext);
 
   const b = req.body;
-  const fileName = 'file_' + new Date().toISOString() + '.' + ext;
+  const fileName = 'file_' + new Date().toISOString().replace(/:/g, '-') + '.' + ext;
   const jobId = new Date().toISOString(); // Unique job ID
 
   jobs[jobId] = { status: 'processing', fileName: fileName, resultFileName: null }; // Initialize job status
@@ -37,7 +41,7 @@ app.post('/3d', (req, res) => {
     }
 
     console.log('The file was saved!');
-    const outFile = 'out_' + new Date().toISOString() + '.3mf';
+    const outFile = 'out_' + new Date().toISOString().replace(/:/g, '-') + '.3mf';
     jobs[jobId].resultFileName = outFile;
     const { execSync } = require('child_process');
 

@@ -25,7 +25,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install \
-    && npm install express-fileupload cors
+    && npm install express express-fileupload cors
 
 WORKDIR /app
 

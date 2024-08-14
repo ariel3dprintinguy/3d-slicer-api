@@ -1,6 +1,9 @@
-const exec = require('child_process').exec;
+
+var exec = require('child_process').exec;
 const express = require('express');
-const bodyParser = require('body-parser');
+const multer = require('multer');
+const fileUpload = require('express-fileupload');
+var bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path'); // Import path module
 const cors = require('cors'); // Import the cors middleware
@@ -8,7 +11,6 @@ const app = express();
 
 // Enable CORS for all routes
 app.use(cors());
-
 
 app.use(
     bodyParser.raw({ limit: '50mb', type: ['model/*'] })
@@ -46,8 +48,8 @@ app.post('/3d', (req, res) => {
                 }
 
                 // the *entire* stdout and stderr (buffered)
-                console.log(stdout: ${stdout});
-                console.log(stderr: ${stderr});
+                console.log(`stdout: ${stdout}`);
+                console.log(`stderr: ${stderr}`);
 
                 // Use path.resolve to create an absolute path
                 const absoluteOutFilePath = path.resolve(__dirname, outFile);

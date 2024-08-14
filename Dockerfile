@@ -24,6 +24,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+RUN npm install \
+    && npm install express-fileupload
 WORKDIR /app
 
 COPY package*.json ./

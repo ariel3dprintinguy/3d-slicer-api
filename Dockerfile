@@ -65,7 +65,15 @@ WORKDIR /app/prusaslicer/bin
 # Set the entrypoint
 ENTRYPOINT ["./bambu-studio"]
 # Ensure Bambu Studio is executable
-RUN chmod +x ./prusaslicer/bin/bambu-studio
+
+# Create a non-root user to run the application
+RUN useradd -m appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 28508
+
+CMD ["node", "index.js"]
 
 EXPOSE 28508
 

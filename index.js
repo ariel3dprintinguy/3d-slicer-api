@@ -61,7 +61,15 @@ app.get('/diagnose', (req, res) => {
         res.status(500).json({ error: 'Error running diagnostics' });
     });
 });
-
+app.get('/bambu-content', (req, res) => {
+    fs.readFile('./prusaslicer/bin/bambu-studio', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading Bambu Studio file:', err);
+            return res.status(500).json({ error: 'Error reading Bambu Studio file', details: err });
+        }
+        res.json({ content: data });
+    });
+});
 app.post('/3d', (req, res) => {
     console.log('Received 3D print request');
     if (!req.files || Object.keys(req.files).length === 0) {

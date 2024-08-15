@@ -2,22 +2,17 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages including git and git-lfs
+# Install necessary packages
 RUN apt-get update && apt-get install -y \
-    git \
     curl \
     ca-certificates \
-    && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash \
-    && apt-get install -y git-lfs \
+    wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - \
     && apt-get install -y nodejs
-
-# Set up git lfs
-RUN git lfs install
 
 WORKDIR /app
 
@@ -30,9 +25,9 @@ RUN npm install
 # Copy the rest of your application
 COPY . .
 
-# Specifically pull the Bambu Studio LFS file
+# Download Bambu Studio binary from GitHub LFS
 RUN mkdir -p ./prusaslicer/bin && \
-    git lfs pull --include="prusaslicer/bin/bambu-studio" --exclude=""
+    wget -O ./prusaslicer/bin/bambu-studio https://media.githubusercontent.com/media/ariel3dprintinguy/3d-slicer-api/master/prusaslicer/bin/bambu-studio
 
 # Ensure Bambu Studio is executable
 RUN chmod +x ./prusaslicer/bin/bambu-studio

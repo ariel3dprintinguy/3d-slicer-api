@@ -19,23 +19,38 @@ RUN apt-get update \
         libwebkit2gtk-4.0-37 \
         libfuse2 \
         curl \
+        libnotify4 \
+        libnss3 \
+        libxss1 \
+        libxtst6 \
+        xdg-utils \
+        libatspi2.0-0 \
+        libdrm2 \
+        libgbm1 \
+        libxcb-dri3-0 \
     && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-RUN npm install \
-    && npm install express express-fileupload cors
 
 WORKDIR /app
 
 COPY package*.json ./
 
 # Install npm dependencies
-RUN npm install
+RUN npm install \
+    && npm install express express-fileupload cors
 
 COPY . .
 
-EXPOSE 3000
+# Set executable permissions for Bambu Studio and PrusaSlicer
+RUN chmod +x ./prusaslicer/prusa-slicer ./prusaslicer/bin/bambu-studio
+
+# Create a non-root user to run the application
+RUN useradd -m appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 28508
 
 CMD ["node", "index.js"]

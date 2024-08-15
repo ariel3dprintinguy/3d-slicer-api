@@ -123,7 +123,7 @@ app.post('/3d', (req, res) => {
                     stderr: stderr
                 }
             });
-        });
+        }
     });
 });
 

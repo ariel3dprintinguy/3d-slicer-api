@@ -61,10 +61,11 @@ app.get('/diagnose', (req, res) => {
         res.status(500).json({ error: 'Error running diagnostics' });
     });
 });
+
 app.post('/3d', (req, res) => {
     console.log('Received 3D print request');
     if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).send('No files were uploaded.');
+        return res.status(400).json({ error: 'No files were uploaded.' });
     }
 
     let uploadedFile = req.files.file;
@@ -75,7 +76,7 @@ app.post('/3d', (req, res) => {
     uploadedFile.mv(fileName, function(err) {
         if (err) {
             console.error('Error saving file:', err);
-            return res.status(500).send(err);
+            return res.status(500).json({ error: 'Error saving file', details: err });
         }
 
         console.log('File saved successfully');
@@ -87,6 +88,7 @@ app.post('/3d', (req, res) => {
             console.log('Bambu Studio file permissions:', fileStats.mode.toString(8));
         } catch (error) {
             console.error('Error checking Bambu Studio file:', error);
+            return res.status(500).json({ error: 'Error checking Bambu Studio file', details: error });
         }
 
         // Set executable permissions
@@ -96,6 +98,7 @@ app.post('/3d', (req, res) => {
             console.log('Executable permissions set');
         } catch (error) {
             console.error('Error setting executable permissions:', error);
+            return res.status(500).json({ error: 'Error setting executable permissions', details: error });
         }
 
         const outFile = 'out_' + new Date().toISOString().replace(/:/g, '-') + '.3mf';
@@ -107,34 +110,67 @@ app.post('/3d', (req, res) => {
         const fullCommand = `./prusaslicer/bin/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
         console.log('Executing command:', fullCommand);
 
-    exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
-        console.log('Bambu Studio execution completed');
-        if (err) {
-            console.error('Error processing file:', err);
-            console.log('Exit code:', err.code);
-            console.log('Signal received:', err.signal);
-            return res.status(500).json({
-                error: 'Error processing file',
-                details: {
-                    message: err.message,
-                    code: err.code,
-                    signal: err.signal,
-                    stdout: stdout,
-                    stderr: stderr
-                }
-            });
-        }
+        exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+            console.log('Bambu Studio execution completed');
+            if (err) {
+                console.error('Error processing file:', err);
+                console.log('Exit code:', err.code);
+                console.log('Signal received:', err.signal);
+                cleanupFiles(fileName, outFile);
+                return res.status(500).json({
+                    error: 'Error processing file',
+                    details: {
+                        message: err.message,
+                        code: err.code,
+                        signal: err.signal,
+                        stdout: stdout,
+                        stderr: stderr
+                    }
+                });
+            }
+
+            console.log('stdout:', stdout);
+            console.log('stderr:', stderr);
+
+            const absoluteOutFilePath = path.resolve(__dirname, outFile);
+            if (fs.existsSync(absoluteOutFilePath)) {
+                console.log('Sending file:', absoluteOutFilePath);
+                res.sendFile(absoluteOutFilePath, (err) => {
+                    if (err) {
+                        console.error('Error sending file:', err);
+                        res.status(500).json({ error: 'Error sending file', details: err });
+                    }
+                    cleanupFiles(fileName, outFile);
+                });
+            } else {
+                console.error('Output file not found:', absoluteOutFilePath);
+                cleanupFiles(fileName, outFile);
+                res.status(500).json({ error: 'Output file not found' });
+            }
+        });
     });
 });
 
-// Add a test route for Bambu Studio
+function cleanupFiles(...files) {
+    files.forEach(file => {
+        try {
+            if (fs.existsSync(file)) {
+                fs.unlinkSync(file);
+                console.log(`Cleaned up file: ${file}`);
+            }
+        } catch (error) {
+            console.error(`Error cleaning up file ${file}:`, error);
+        }
+    });
+}
+
 app.get('/test-bambu', (req, res) => {
     exec('./prusaslicer/bin/bambu-studio --version', (err, stdout, stderr) => {
         if (err) {
             console.error('Error running Bambu Studio:', err);
-            return res.status(500).send('Error running Bambu Studio');
+            return res.status(500).json({ error: 'Error running Bambu Studio', details: err });
         }
-        res.send(`Bambu Studio version: ${stdout}\nErrors: ${stderr}`);
+        res.json({ version: stdout, errors: stderr });
     });
 });
 

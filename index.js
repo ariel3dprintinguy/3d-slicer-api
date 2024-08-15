@@ -23,6 +23,7 @@ app.get('/', (req, res) => {
     res.send('hello world');
 });
 
+
 app.post('/3d', (req, res) => {
     console.log('Received 3D print request');
     if (!req.files || Object.keys(req.files).length === 0) {
@@ -69,18 +70,32 @@ app.post('/3d', (req, res) => {
         const fullCommand = `./prusaslicer/bin/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
         console.log('Executing command:', fullCommand);
 
+        // Execute command with more detailed error handling
         exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+            console.log('Bambu Studio execution completed');
             if (err) {
                 console.error('Error processing file:', err);
+                console.log('Exit code:', err.code);
+                console.log('Signal received:', err.signal);
                 return res.status(500).send('Error processing file');
             }
 
             console.log('stdout:', stdout);
             console.error('stderr:', stderr);
 
+            // Check if the output file was created
             const absoluteOutFilePath = path.resolve(__dirname, outFile);
-            console.log('Sending file:', absoluteOutFilePath);
+            console.log('Checking for output file:', absoluteOutFilePath);
+            if (fs.existsSync(absoluteOutFilePath)) {
+                console.log('Output file created successfully');
+                const stats = fs.statSync(absoluteOutFilePath);
+                console.log('Output file size:', stats.size, 'bytes');
+            } else {
+                console.error('Output file was not created');
+                return res.status(500).send('Output file was not created');
+            }
 
+            console.log('Sending file:', absoluteOutFilePath);
             res.sendFile(absoluteOutFilePath, (err) => {
                 if (err) {
                     console.error('Error sending file:', err);
@@ -97,6 +112,17 @@ app.post('/3d', (req, res) => {
                 }
             });
         });
+    });
+});
+
+// Add a test route for Bambu Studio
+app.get('/test-bambu', (req, res) => {
+    exec('./prusaslicer/bin/bambu-studio --version', (err, stdout, stderr) => {
+        if (err) {
+            console.error('Error running Bambu Studio:', err);
+            return res.status(500).send('Error running Bambu Studio');
+        }
+        res.send(`Bambu Studio version: ${stdout}\nErrors: ${stderr}`);
     });
 });
 

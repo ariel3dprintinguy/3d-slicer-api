@@ -49,6 +49,7 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 # Download Bambu Studio binary from GitHub LFS
+# Set up git lfs and fetch Bambu Studio binary
 ARG GITHUB_TOKEN
 RUN echo "Setting up git and attempting to clone repository..." && \
     git config --global credential.helper store && \
@@ -56,7 +57,8 @@ RUN echo "Setting up git and attempting to clone repository..." && \
     git lfs install && \
     echo "Git LFS installed. Attempting to clone repository..." && \
     REPO_URL="https://github.com/ariel3dprintinguy/3d-slicer-api.git" && \
-    if git clone "$REPO_URL" temp_repo; then \
+    echo "Repository URL: ${REPO_URL}" && \
+    if git clone "${REPO_URL%/}" temp_repo; then \
         echo "Repository cloned successfully." && \
         cd temp_repo && \
         echo "Fetching LFS objects..." && \
@@ -84,7 +86,7 @@ RUN echo "Setting up git and attempting to clone repository..." && \
         echo "Testing repository access:" && \
         curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/ariel3dprintinguy/3d-slicer-api && \
         echo "Attempting to clone with verbose output:" && \
-        GIT_CURL_VERBOSE=1 git clone "$REPO_URL" && \
+        GIT_CURL_VERBOSE=1 GIT_TRACE=1 git clone "${REPO_URL%/}" && \
         exit 1; \
     fi && \
     rm ~/.git-credentials

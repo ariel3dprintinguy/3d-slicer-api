@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
-    git \
+    wget \
     git-lfs \
     curl \
     ca-certificates \

@@ -50,54 +50,20 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 
-# Download Bambu Studio binary from GitHub LFS
-ARG GITHUB_TOKEN
+RUN wget -O /tmp/bambu-studio "https://download.wetransfer.com/eugv/f9c7228d5bd94d4b1af68d019bacb6c720240815191532/298c801e234c850fd1e3059ca1c1159e148d78de/bambu-studio?cf=y&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImRlZmF1bHQifQ.eyJleHAiOjE3MjM3NTAwMTEsImlhdCI6MTcyMzc0OTQxMSwiZG93bmxvYWRfaWQiOiI3M2E5NzBmNS01ZGI0LTQ4ZWItYTEyNS1mOWQzZGI1NTA5YTEiLCJzdG9yYWdlX3NlcnZpY2UiOiJzdG9ybSJ9.8f8OAtDpqqVNuDV2xxjARFibRJIu3DAo3NkZVDDIl2U"
 
-RUN echo "Setting up git and attempting to clone repository..." && \
-    git config --global credential.helper store && \
-    echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials && \
-    git lfs install && \
-    echo "Git LFS installed. Attempting to clone repository..." && \
-    REPO_URL="https://github.com/ariel3dprintinguy/3d-slicer-api.git" && \
-    echo "Repository URL: ${REPO_URL}" && \
-    mkdir -p temp_repo && cd temp_repo && \
-    git init && \
-    git remote add origin "${REPO_URL}" && \
-    git config core.sparseCheckout true && \
-    echo "prusaslicer/bin/bambu-studio" > .git/info/sparse-checkout && \
-    if git pull origin main; then \
-        echo "Repository cloned successfully." && \
-        echo "Fetching LFS objects..." && \
-        git lfs fetch --all && \
-        git lfs checkout && \
-        if [ -f prusaslicer/bin/bambu-studio ]; then \
-            echo "Bambu Studio binary found" && \
-            file prusaslicer/bin/bambu-studio && \
-            mv prusaslicer/bin/bambu-studio /app/prusaslicer/bin/bambu-studio && \
-            echo "Bambu Studio binary moved to /app/prusaslicer/bin/bambu-studio" && \
-            file /app/prusaslicer/bin/bambu-studio; \
-        else \
-            echo "Error: Bambu Studio binary not found" && \
-            echo "Contents of prusaslicer/bin:" && \
-            ls -la prusaslicer/bin && \
-            exit 1; \
-        fi && \
-        cd .. && \
-        rm -rf temp_repo; \
-    else \
-        echo "Failed to clone repository. Diagnostic information:" && \
-        echo "Git version: $(git --version)" && \
-        echo "Testing GitHub API access:" && \
-        curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user && \
-        echo "Testing repository access:" && \
-        curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/ariel3dprintinguy/3d-slicer-api && \
-        echo "Attempting to clone with verbose output:" && \
-        GIT_CURL_VERBOSE=1 GIT_TRACE=1 git pull origin main && \
-        exit 1; \
-    fi && \
-    cd /app && \
-    rm -rf ~/.git-credentials
+# Make the downloaded file executable
+RUN chmod +x /tmp/bambu-studio
 
+# Move the file to the correct location
+RUN mkdir -p /app/prusaslicer/bin && \
+    mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
+
+# Set the working directory
+WORKDIR /app/prusaslicer/bin
+
+# Set the entrypoint
+ENTRYPOINT ["./bambu-studio"]
 # Ensure Bambu Studio is executable
 RUN chmod +x ./prusaslicer/bin/bambu-studio
 

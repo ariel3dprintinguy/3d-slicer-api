@@ -60,9 +60,13 @@ RUN echo "Setting up git and attempting to clone repository..." && \
     echo "Git LFS installed. Attempting to clone repository..." && \
     REPO_URL="https://github.com/ariel3dprintinguy/3d-slicer-api.git" && \
     echo "Repository URL: ${REPO_URL}" && \
-    if git clone "${REPO_URL}" temp_repo; then \
+    mkdir -p temp_repo && cd temp_repo && \
+    git init && \
+    git remote add origin "${REPO_URL}" && \
+    git config core.sparseCheckout true && \
+    echo "prusaslicer/bin/bambu-studio" > .git/info/sparse-checkout && \
+    if git pull origin main; then \
         echo "Repository cloned successfully." && \
-        cd temp_repo && \
         echo "Fetching LFS objects..." && \
         git lfs fetch --all && \
         git lfs checkout && \
@@ -88,10 +92,11 @@ RUN echo "Setting up git and attempting to clone repository..." && \
         echo "Testing repository access:" && \
         curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/ariel3dprintinguy/3d-slicer-api && \
         echo "Attempting to clone with verbose output:" && \
-        GIT_CURL_VERBOSE=1 GIT_TRACE=1 git clone "${REPO_URL}" && \
+        GIT_CURL_VERBOSE=1 GIT_TRACE=1 git pull origin main && \
         exit 1; \
     fi && \
-    rm ~/.git-credentials
+    cd /app && \
+    rm -rf ~/.git-credentials
 
 # Ensure Bambu Studio is executable
 RUN chmod +x ./prusaslicer/bin/bambu-studio

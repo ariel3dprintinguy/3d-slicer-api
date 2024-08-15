@@ -105,7 +105,7 @@ app.post('/3d', (req, res) => {
 
         // Log the full command
         const fullCommand = `./prusaslicer/bin/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
-    console.log('Executing command:', fullCommand);
+        console.log('Executing command:', fullCommand);
 
     exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
         console.log('Bambu Studio execution completed');
@@ -121,37 +121,6 @@ app.post('/3d', (req, res) => {
                     signal: err.signal,
                     stdout: stdout,
                     stderr: stderr
-                }
-            });
-            console.log('stdout:', stdout);
-            console.error('stderr:', stderr);
-
-            // Check if the output file was created
-            const absoluteOutFilePath = path.resolve(__dirname, outFile);
-            console.log('Checking for output file:', absoluteOutFilePath);
-            if (fs.existsSync(absoluteOutFilePath)) {
-                console.log('Output file created successfully');
-                const stats = fs.statSync(absoluteOutFilePath);
-                console.log('Output file size:', stats.size, 'bytes');
-            } else {
-                console.error('Output file was not created');
-                return res.status(500).send('Output file was not created');
-            }
-
-            console.log('Sending file:', absoluteOutFilePath);
-            res.sendFile(absoluteOutFilePath, (err) => {
-                if (err) {
-                    console.error('Error sending file:', err);
-                    res.status(err.status).end();
-                }
-
-                // Clean up temporary files
-                try {
-                    fs.unlinkSync(fileName);
-                    fs.unlinkSync(absoluteOutFilePath);
-                    console.log('Temporary files cleaned up');
-                } catch (error) {
-                    console.error('Error cleaning up temporary files:', error);
                 }
             });
         });

@@ -4,6 +4,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
+    git \
+    git-lfs \
     curl \
     ca-certificates \
     jq \
@@ -47,46 +49,27 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 # Download Bambu Studio binary from GitHub LFS
-RUN mkdir -p ./prusaslicer/bin && \
-    FILE_PATH="prusaslicer/bin/bambu-studio" && \
-    REPO="ariel3dprintinguy/3d-slicer-api" && \
-    echo "Fetching file info..." && \
-    FILE_INFO=$(curl -sS -H "Authorization: token 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" \
-        "https://api.github.com/repos/$REPO/contents/$FILE_PATH") && \
-    echo "File info: $FILE_INFO" && \
-    if [ "$(echo "$FILE_INFO" | jq -r .message)" = "Not Found" ]; then \
-        echo "Error: File not found" && exit 1; \
+ARG GITHUB_TOKEN
+RUN git config --global credential.helper store && \
+    echo "https://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:x-oauth-basic@github.com" > ~/.git-credentials && \
+    git lfs install && \
+    git clone https://github.com/ariel3dprintinguy/3d-slicer-api.git temp_repo && \
+    cd temp_repo && \
+    git lfs fetch --all && \
+    git lfs checkout && \
+    if [ -f prusaslicer/bin/bambu-studio ]; then \
+        echo "Bambu Studio binary found" && \
+        file prusaslicer/bin/bambu-studio && \
+        mv prusaslicer/bin/bambu-studio /app/prusaslicer/bin/bambu-studio && \
+        echo "Bambu Studio binary moved to /app/prusaslicer/bin/bambu-studio" && \
+        file /app/prusaslicer/bin/bambu-studio; \
+    else \
+        echo "Error: Bambu Studio binary not found" && \
+        exit 1; \
     fi && \
-    SHA=$(echo $FILE_INFO | jq -r .sha) && \
-    echo "SHA: $SHA" && \
-    echo "Fetching LFS info..." && \
-    LFS_INFO=$(curl -sS -H "Authorization: token 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" \
-        "https://api.github.com/repos/$REPO/git/blobs/$SHA" | jq -r .content | base64 -d) && \
-    echo "LFS info: $LFS_INFO" && \
-    OID=$(echo "$LFS_INFO" | grep oid | cut -d' ' -f2) && \
-    SIZE=$(echo "$LFS_INFO" | grep size | cut -d' ' -f2) && \
-    echo "OID: $OID, Size: $SIZE" && \
-    echo "Fetching download URL..." && \
-    DOWNLOAD_URL=$(curl -sS -X POST \
-        -H "Authorization: token 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" \
-        -H "Accept: application/vnd.git-lfs+json" \
-        -H "Content-Type: application/json" \
-        -d "{\"operation\": \"download\", \"transfer\": [\"basic\"], \"objects\": [{\"oid\": \"$OID\", \"size\": $SIZE}]}" \
-        "https://github.com/$REPO.git/info/lfs/objects/batch" | \
-        jq -r '.objects[0].actions.download.href') && \
-    echo "Download URL: $DOWNLOAD_URL" && \
-    if [ -z "$DOWNLOAD_URL" ]; then \
-        echo "Error: Failed to get download URL" && exit 1; \
-    fi && \
-    echo "Downloading file..." && \
-    curl -sS -L -o ./prusaslicer/bin/bambu-studio "$DOWNLOAD_URL" && \
-    echo "Download complete. Checking file..." && \
-    if [ ! -f ./prusaslicer/bin/bambu-studio ]; then \
-        echo "Error: File not downloaded" && exit 1; \
-    fi && \
-    echo "File size: $(wc -c < ./prusaslicer/bin/bambu-studio) bytes" && \
-    echo "File type: $(file ./prusaslicer/bin/bambu-studio)"
-
+    cd .. && \
+    rm -rf temp_repo && \
+    rm ~/.git-credentials
 # Ensure Bambu Studio is executable
 RUN chmod +x ./prusaslicer/bin/bambu-studio
 

@@ -50,7 +50,7 @@ app.post('/3d', (req, res) => {
         const processPath = path.join(__dirname, 'profiles', 'process.json');
         const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
 
-        exec(`./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
+        exec(`./prusaslicer/bin/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
             if (err) {
                 console.log(err);
                 return res.status(500).send('Error processing file');

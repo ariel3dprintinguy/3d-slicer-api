@@ -50,25 +50,43 @@ RUN npm install \
 COPY . .
 # Download Bambu Studio binary from GitHub LFS
 ARG GITHUB_TOKEN
-RUN git config --global credential.helper store && \
-    echo "https://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:x-oauth-basic@github.com" > ~/.git-credentials && \
+RUN echo "Setting up git and attempting to clone repository..." && \
+    git config --global credential.helper store && \
+    echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials && \
     git lfs install && \
-    git clone https://github.com/ariel3dprintinguy/3d-slicer-api.git temp_repo && \
-    cd temp_repo && \
-    git lfs fetch --all && \
-    git lfs checkout && \
-    if [ -f prusaslicer/bin/bambu-studio ]; then \
-        echo "Bambu Studio binary found" && \
-        file prusaslicer/bin/bambu-studio && \
-        mv prusaslicer/bin/bambu-studio /app/prusaslicer/bin/bambu-studio && \
-        echo "Bambu Studio binary moved to /app/prusaslicer/bin/bambu-studio" && \
-        file /app/prusaslicer/bin/bambu-studio; \
+    echo "Git LFS installed. Attempting to clone repository..." && \
+    REPO_URL="https://github.com/ariel3dprintinguy/3d-slicer-api.git" && \
+    if git clone "$REPO_URL" temp_repo; then \
+        echo "Repository cloned successfully." && \
+        cd temp_repo && \
+        echo "Fetching LFS objects..." && \
+        git lfs fetch --all && \
+        git lfs checkout && \
+        if [ -f prusaslicer/bin/bambu-studio ]; then \
+            echo "Bambu Studio binary found" && \
+            file prusaslicer/bin/bambu-studio && \
+            mv prusaslicer/bin/bambu-studio /app/prusaslicer/bin/bambu-studio && \
+            echo "Bambu Studio binary moved to /app/prusaslicer/bin/bambu-studio" && \
+            file /app/prusaslicer/bin/bambu-studio; \
+        else \
+            echo "Error: Bambu Studio binary not found" && \
+            echo "Contents of prusaslicer/bin:" && \
+            ls -la prusaslicer/bin && \
+            exit 1; \
+        fi && \
+        cd .. && \
+        rm -rf temp_repo; \
     else \
-        echo "Error: Bambu Studio binary not found" && \
+        echo "Failed to clone repository. Diagnostic information:" && \
+        echo "Git version: $(git --version)" && \
+        echo "Testing GitHub API access:" && \
+        curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user && \
+        echo "Testing repository access:" && \
+        curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/ariel3dprintinguy/3d-slicer-api && \
+        echo "Attempting to clone with verbose output:" && \
+        GIT_CURL_VERBOSE=1 git clone "$REPO_URL" && \
         exit 1; \
     fi && \
-    cd .. && \
-    rm -rf temp_repo && \
     rm ~/.git-credentials
 # Ensure Bambu Studio is executable
 RUN chmod +x ./prusaslicer/bin/bambu-studio

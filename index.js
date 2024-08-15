@@ -23,7 +23,44 @@ app.get('/', (req, res) => {
     res.send('hello world');
 });
 
+app.get('/diagnose', (req, res) => {
+    console.log('Running diagnostics');
+    let diagnosticResults = {};
 
+    // Function to run a command and capture its output
+    const runCommand = (command) => {
+        return new Promise((resolve, reject) => {
+            exec(command, (error, stdout, stderr) => {
+                resolve({ error, stdout, stderr });
+            });
+        });
+    };
+
+    // Run a series of diagnostic commands
+    Promise.all([
+        runCommand('whoami'),
+        runCommand('pwd'),
+        runCommand('ls -la ./prusaslicer/bin'),
+        runCommand('file ./prusaslicer/bin/bambu-studio'),
+        runCommand('ldd ./prusaslicer/bin/bambu-studio'),
+        runCommand('./prusaslicer/bin/bambu-studio --version'),
+        runCommand('env'),
+    ]).then(results => {
+        diagnosticResults = {
+            user: results[0],
+            currentDirectory: results[1],
+            binContents: results[2],
+            fileInfo: results[3],
+            libraries: results[4],
+            version: results[5],
+            environment: results[6]
+        };
+        res.json(diagnosticResults);
+    }).catch(error => {
+        console.error('Error running diagnostics:', error);
+        res.status(500).json({ error: 'Error running diagnostics' });
+    });
+});
 app.post('/3d', (req, res) => {
     console.log('Received 3D print request');
     if (!req.files || Object.keys(req.files).length === 0) {
@@ -68,18 +105,24 @@ app.post('/3d', (req, res) => {
 
         // Log the full command
         const fullCommand = `./prusaslicer/bin/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
-        console.log('Executing command:', fullCommand);
+    console.log('Executing command:', fullCommand);
 
-        // Execute command with more detailed error handling
-        exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
-            console.log('Bambu Studio execution completed');
-            if (err) {
-                console.error('Error processing file:', err);
-                console.log('Exit code:', err.code);
-                console.log('Signal received:', err.signal);
-                return res.status(500).send('Error processing file');
-            }
-
+    exec(fullCommand, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+        console.log('Bambu Studio execution completed');
+        if (err) {
+            console.error('Error processing file:', err);
+            console.log('Exit code:', err.code);
+            console.log('Signal received:', err.signal);
+            return res.status(500).json({
+                error: 'Error processing file',
+                details: {
+                    message: err.message,
+                    code: err.code,
+                    signal: err.signal,
+                    stdout: stdout,
+                    stderr: stderr
+                }
+            });
             console.log('stdout:', stdout);
             console.error('stderr:', stderr);
 

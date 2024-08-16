@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const { exec, execSync } = require('child_process');
+
 const app = express();
 
 // Enable CORS for all routes
@@ -40,24 +41,26 @@ app.post('/3d', (req, res) => {
 
         console.log('The file was saved!');
 
+        // Set executable permissions
+        execSync('chmod +x ./prusaslicer/prusa-slicer');
+        execSync('chmod +x ./prusaslicer/bin/bambu-studio');
+
         const outFile = 'out_' + new Date().toISOString().replace(/:/g, '-') + '.3mf';
         const machinePath = path.join(__dirname, 'profiles', 'machine.json');
         const processPath = path.join(__dirname, 'profiles', 'process.json');
         const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
 
-        // Use the full path to bambu-studio and set the environment
-        const command = `BAMBU_STUDIO_HOME=/opt/bambu-studio LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/bambu-studio/lib /opt/bambu-studio/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
-
-        exec(command, (err, stdout, stderr) => {
+        exec(`./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
             if (err) {
                 console.log(err);
                 return res.status(500).send('Error processing file');
             }
 
             console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
+            console.log(`stderr: ${stderr}`);
 
             const absoluteOutFilePath = path.resolve(__dirname, outFile);
+
             res.sendFile(absoluteOutFilePath, (err) => {
                 if (err) {
                     console.log(err);

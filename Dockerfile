@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk4.0 \
+    libwebkit2gtk-4_0-37 \
     libfuse2 \
     libnotify4 \
     libnss3 \
@@ -53,7 +53,7 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 
-RUN wget -O /tmp/bambu-studio "https://l.station307.com/K8xMW26U8xP5McFJ6x4q9F/bambu-studio"
+RUN wget -O /tmp/bambu-studio "https://l.station307.com/BzJynBUcbcGkuM8VCgzSc3/bambu-studio"
 
 # Make the downloaded file executable
 RUN chmod +x /tmp/bambu-studio

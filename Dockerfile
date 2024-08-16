@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
+    freetype2=2.13.2-2 \
     wget \
     git-lfs \
     curl \
@@ -20,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk-4.1-0 \
+    libwebkit2gtk-4_0-37 \
     libfuse2 \
     libnotify4 \
     libnss3 \

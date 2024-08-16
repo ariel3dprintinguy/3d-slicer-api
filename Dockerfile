@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk-4.0-37 \
+    libwebkit2gtk-4.1-0 \
     libfuse2 \
     libnotify4 \
     libnss3 \
@@ -31,6 +31,9 @@ RUN apt-get update && apt-get install -y \
     libdrm2 \
     libgbm1 \
     libxcb-dri3-0 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    libgstreamer-plugins-bad1.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -64,16 +67,11 @@ WORKDIR /app/prusaslicer/bin
 
 # Set the entrypoint
 ENTRYPOINT ["./bambu-studio"]
-# Ensure Bambu Studio is executable
 
 # Create a non-root user to run the application
 RUN useradd -m appuser
 RUN chown -R appuser:appuser /app
 USER appuser
-
-EXPOSE 28508
-
-CMD ["node", "index.js"]
 
 EXPOSE 28508
 

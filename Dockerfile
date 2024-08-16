@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk-4.0-37 \
+    libwebkit2gtk-4.1-0 \
     libfuse2 \
     libnotify4 \
     libnss3 \

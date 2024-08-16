@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Combine package installation and clean up cache to reduce layers and image size
 RUN apt-get update \
     && apt-get install -y \
+        wget \
         libcairo2 \
         libglu1-mesa \
         gstreamer1.0-libav \

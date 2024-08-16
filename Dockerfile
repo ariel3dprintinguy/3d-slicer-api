@@ -60,8 +60,7 @@ RUN wget -O /tmp/bambu-studio "https://l.station307.com/BzJynBUcbcGkuM8VCgzSc3/b
     && mkdir -p /app/prusaslicer/bin \
     && mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
 
-RUN mv BambuStudio.conf BambuStudio.conf.bak \
-    && touch BambuStudio.conf
+
 
 # Set the working directory
 WORKDIR /app/prusaslicer/bin

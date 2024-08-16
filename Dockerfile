@@ -2,9 +2,9 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages including Flatpak
+# Install necessary packages
 RUN apt-get update && apt-get install -y \
-    flatpak \
+    wget \
     git-lfs \
     curl \
     ca-certificates \
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk \
+    libwebkit2gtk-4.0-37 \
     libfuse2 \
     libnotify4 \
     libnss3 \
@@ -37,15 +37,17 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Flathub repository
-RUN flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-# Install BambuStudio from Flatpak
-RUN flatpak install -y flathub com.bambulab.BambuStudio
-
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
+
+# Install BambuStudio CLI
+RUN wget -O /tmp/bambu-studio.AppImage https://github.com/bambulab/BambuStudio/releases/latest/download/BambuStudio_linux.AppImage \
+    && chmod +x /tmp/bambu-studio.AppImage \
+    && /tmp/bambu-studio.AppImage --appimage-extract \
+    && mv squashfs-root /opt/bambu-studio \
+    && ln -s /opt/bambu-studio/AppRun /usr/local/bin/bambu-studio \
+    && rm /tmp/bambu-studio.AppImage
 
 WORKDIR /app
 
@@ -67,8 +69,5 @@ USER appuser
 # Expose port for the Node.js application
 EXPOSE 28508
 
-# Set the entrypoint to run BambuStudio
-ENTRYPOINT ["flatpak", "run", "com.bambulab.BambuStudio"]
-
-# Set the default command to run the Node.js application
+# Set the command to run the Node.js application
 CMD ["node", "index.js"]

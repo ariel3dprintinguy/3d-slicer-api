@@ -29,10 +29,9 @@ app.get('/', (req, res) => {
 });
 app.post('/3d', async (req, res) => {
     try {
-       if (!req.files || Object.keys(req.files).length === 0) {
+        if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).send('No files were uploaded.');
         }
-
         const uploadedFile = req.files.file;
         const ext = path.extname(uploadedFile.name);
         const fileName = `file_${Date.now()}${ext}`;
@@ -49,19 +48,19 @@ app.post('/3d', async (req, res) => {
         const processPath = path.join(__dirname, 'profiles', 'process.json');
         const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
 
-        const command = `./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --export-3mf ${outFilePath} ${filePath}`;
-        await execPromise(command);
+        const slicerCommand = `./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --export-3mf ${outFilePath} ${filePath}`;
+        await execPromise(slicerCommand);
 
-        // Upload to bashupload.com
-        const form = new FormData();
-        form.append('file', fsSync.createReadStream(outFilePath));  // Use fsSync here
+        // Upload to bashupload.com using curl
+        const curlCommand = `curl bashupload.com -T ${outFilePath}`;
+        const { stdout } = await execPromise(curlCommand);
 
-        const uploadResponse = await axios.post('https://bashupload.com', form, {
-            headers: form.getHeaders(),
-            maxBodyLength: Infinity,
-        });
-
-        const uploadedUrl = uploadResponse.data.match(/wget (.*)/)[1];
+        // Extract the URL from the curl output
+        const match = stdout.match(/wget (https?:\/\/[^\s]+)/);
+        if (!match) {
+            throw new Error('Failed to extract URL from curl output');
+        }
+        const uploadedUrl = match[1];
 
         res.json({ url: uploadedUrl });
 

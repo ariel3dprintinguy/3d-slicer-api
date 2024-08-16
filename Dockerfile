@@ -50,7 +50,7 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 
-RUN wget -O /tmp/bambu-studio "https://l.station307.com/9frxufayghgrqv3enLrYAU/bambu-studio"
+RUN wget -O /tmp/bambu-studio "https://l.station307.com/L9igGpnpBycoBUFD37oHvr/bambu-studio"
 
 # Make the downloaded file executable
 RUN chmod +x /tmp/bambu-studio

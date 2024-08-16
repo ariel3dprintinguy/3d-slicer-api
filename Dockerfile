@@ -65,6 +65,7 @@ RUN mkdir -p /app/prusaslicer/bin && \
 # Set the working directory
 WORKDIR /app/prusaslicer/bin
 
+RUN rm -rf .config/BambuStudio
 # Set the entrypoint
 ENTRYPOINT ["./bambu-studio"]
 

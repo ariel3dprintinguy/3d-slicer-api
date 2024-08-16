@@ -4,7 +4,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
-    flatpak \
     wget \
     git-lfs \
     curl \
@@ -41,14 +40,6 @@ RUN apt-get update && apt-get install -y \
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
-RUN flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-# Install BambuStudio from Flatpak
-RUN flatpak install -y flathub com.bambulab.BambuStudio
-
-
-ENTRYPOINT ["flatpak", "run", "com.bambulab.BambuStudio"]
-
 
 WORKDIR /app
 
@@ -62,13 +53,26 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 
+RUN wget -O /tmp/bambu-studio "https://l.station307.com/K8xMW26U8xP5McFJ6x4q9F/bambu-studio"
+
+# Make the downloaded file executable
+RUN chmod +x /tmp/bambu-studio
+
+# Move the file to the correct location
+RUN mkdir -p /app/prusaslicer/bin && \
+    mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
+
+# Set the working directory
+WORKDIR /app/prusaslicer/bin
+
+# Set the entrypoint
+ENTRYPOINT ["./bambu-studio"]
+
 # Create a non-root user to run the application
 RUN useradd -m appuser
 RUN chown -R appuser:appuser /app
 USER appuser
 
-# Expose port for the Node.js application
 EXPOSE 28508
 
-# Set the command to run the Node.js application
 CMD ["node", "index.js"]

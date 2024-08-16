@@ -2,10 +2,9 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages
+# Install necessary packages including Flatpak
 RUN apt-get update && apt-get install -y \
-    freetype2=2.13.2-2 \
-    wget \
+    flatpak \
     git-lfs \
     curl \
     ca-certificates \
@@ -21,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk-4_0-37 \
+    libwebkit2gtk-4.0-37 \
     libfuse2 \
     libnotify4 \
     libnss3 \
@@ -37,6 +36,12 @@ RUN apt-get update && apt-get install -y \
     libgstreamer-plugins-bad1.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Add Flathub repository
+RUN flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+# Install BambuStudio from Flatpak
+RUN flatpak install -y flathub com.bambulab.BambuStudio
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -54,27 +59,16 @@ RUN npm install \
 # Copy the rest of your application
 COPY . .
 
-RUN wget -O /tmp/bambu-studio "https://l.station307.com/L9igGpnpBycoBUFD37oHvr/bambu-studio"
-
-# Make the downloaded file executable
-RUN chmod +x /tmp/bambu-studio
-
-# Move the file to the correct location
-RUN mkdir -p /app/prusaslicer/bin && \
-    mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
-
-# Set the working directory
-WORKDIR /app/prusaslicer/bin
-
-RUN rm -rf .config/BambuStudio
-# Set the entrypoint
-ENTRYPOINT ["./bambu-studio"]
-
 # Create a non-root user to run the application
 RUN useradd -m appuser
 RUN chown -R appuser:appuser /app
 USER appuser
 
+# Expose port for the Node.js application
 EXPOSE 28508
 
+# Set the entrypoint to run BambuStudio
+ENTRYPOINT ["flatpak", "run", "com.bambulab.BambuStudio"]
+
+# Set the default command to run the Node.js application
 CMD ["node", "index.js"]

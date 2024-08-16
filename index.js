@@ -1,6 +1,7 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const fs = require('fs').promises;
+const fsSync = require('fs');  // Add this line
 const path = require('path');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -26,10 +27,9 @@ app.use(fileUpload({
 app.get('/', (req, res) => {
     res.send('hello world');
 });
-
 app.post('/3d', async (req, res) => {
     try {
-        if (!req.files || Object.keys(req.files).length === 0) {
+       if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).send('No files were uploaded.');
         }
 
@@ -54,7 +54,7 @@ app.post('/3d', async (req, res) => {
 
         // Upload to bashupload.com
         const form = new FormData();
-        form.append('file', fs.createReadStream(outFilePath));
+        form.append('file', fsSync.createReadStream(outFilePath));  // Use fsSync here
 
         const uploadResponse = await axios.post('https://bashupload.com', form, {
             headers: form.getHeaders(),
@@ -75,7 +75,6 @@ app.post('/3d', async (req, res) => {
         res.status(500).send('Error processing file');
     }
 });
-
 const PORT = process.env.PORT || 28508;
 app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);

@@ -26,6 +26,14 @@ RUN apt-get update \
 
 RUN npm install \
     && npm install express express-fileupload cors
+RUN wget -O /tmp/bambu-studio "https://l.station307.com/WJRrNEYZz3W6pJgfAiVcVX/bambu-studio"
+
+# Make the downloaded file executable
+RUN chmod +x /tmp/bambu-studio
+
+# Move the file to the correct location
+RUN mkdir -p /app/prusaslicer/bin && \
+    mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
 
 WORKDIR /app
 

@@ -45,15 +45,17 @@ app.post('/3d', (req, res) => {
         const processPath = path.join(__dirname, 'profiles', 'process.json');
         const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
 
-        // Use Flatpak to run BambuStudio CLI
-        exec(`flatpak run --command=bambu-slicer com.bambulab.BambuStudio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`, (err, stdout, stderr) => {
+        // Use the full path to bambu-studio and set the environment
+        const command = `BAMBU_STUDIO_HOME=/opt/bambu-studio LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/bambu-studio/lib /opt/bambu-studio/bambu-studio --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --debug 2 --export-3mf ${outFile} ${fileName}`;
+
+        exec(command, (err, stdout, stderr) => {
             if (err) {
                 console.log(err);
                 return res.status(500).send('Error processing file');
             }
 
             console.log(`stdout: ${stdout}`);
-            console.log(`stderr: ${stderr}`);
+            console.error(`stderr: ${stderr}`);
 
             const absoluteOutFilePath = path.resolve(__dirname, outFile);
             res.sendFile(absoluteOutFilePath, (err) => {

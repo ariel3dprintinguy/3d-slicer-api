@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libopenvdb-dev \
     fonts-noto \
     wayland-protocols \
-    libwebkit2gtk-4_0-37 \
+    libwebkit2gtk-4.0-37 \
     libfuse2 \
     libnotify4 \
     libnss3 \
@@ -39,7 +39,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -47,22 +49,19 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install npm dependencies
-RUN npm install \
+RUN npm ci \
     && npm install express express-fileupload cors
 
 # Copy the rest of your application
 COPY . .
 
-RUN wget -O /tmp/bambu-studio "https://l.station307.com/BzJynBUcbcGkuM8VCgzSc3/bambu-studio"
+RUN wget -O /tmp/bambu-studio "https://l.station307.com/BzJynBUcbcGkuM8VCgzSc3/bambu-studio" \
+    && chmod +x /tmp/bambu-studio \
+    && mkdir -p /app/prusaslicer/bin \
+    && mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
 
-# Make the downloaded file executable
-RUN chmod +x /tmp/bambu-studio
-
-# Move the file to the correct location
-RUN mkdir -p /app/prusaslicer/bin && \
-    mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
-RUN mv BambuStudio.conf BambuStudio.conf.bak
-RUN touch BambuStudio.conf
+RUN mv BambuStudio.conf BambuStudio.conf.bak \
+    && touch BambuStudio.conf
 
 # Set the working directory
 WORKDIR /app/prusaslicer/bin

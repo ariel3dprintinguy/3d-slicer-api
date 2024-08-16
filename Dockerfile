@@ -61,6 +61,8 @@ RUN chmod +x /tmp/bambu-studio
 # Move the file to the correct location
 RUN mkdir -p /app/prusaslicer/bin && \
     mv /tmp/bambu-studio /app/prusaslicer/bin/bambu-studio
+RUN mv BambuStudio.conf BambuStudio.conf.bak
+RUN touch BambuStudio.conf
 
 # Set the working directory
 WORKDIR /app/prusaslicer/bin

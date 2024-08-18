@@ -48,7 +48,7 @@ app.post('/3d', async (req, res) => {
         const processPath = path.join(__dirname, 'profiles', 'process.json');
         const filamentPath = path.join(__dirname, 'profiles', 'filament.json');
 
-        const slicerCommand = `./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --slice 0 --export-3mf ${outFilePath} ${filePath}`;
+        const slicerCommand = `./prusaslicer/prusa-slicer --load-settings "${machinePath};${processPath}" --load-filaments "${filamentPath}" --orient  --curr-bed-type "Textured PEI Plate" --slice 0 --export-3mf ${outFilePath} ${filePath}`;
         await execPromise(slicerCommand);
 
         // Upload to bashupload.com using curl
